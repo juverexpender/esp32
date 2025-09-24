@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control 4 Servos</title>
+  <title>Panel de Control TikTok + Servos</title>
+  <script src="/socket.io/socket.io.js"></script>
   <style>
     body { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; font-family:Arial; background:#f3f4f6; }
-    h1 { margin-bottom:20px; }
-    .buttons { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+    h1 { margin-bottom:10px; }
+    .status { margin-bottom:15px; font-size:16px; }
+    .buttons { display:grid; grid-template-columns:repeat(2,1fr); gap:15px; margin-bottom:20px; }
     button {
       padding:20px;
       font-size:18px;
@@ -20,23 +22,63 @@
       transition:transform 0.15s ease, box-shadow 0.15s ease;
     }
     button:hover { transform:scale(1.05); box-shadow:0 4px 8px rgba(0,0,0,0.2); }
-    #status { margin-top:20px; font-size:14px; }
+    #comments {
+      max-width:300px;
+      background:white;
+      border-radius:10px;
+      padding:10px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
+      overflow-y:auto;
+      max-height:200px;
+      font-size:14px;
+    }
+    .comment { border-bottom:1px solid #ddd; padding:5px 0; }
+    .comment strong { color:#2563eb; }
+    .servo-event { color:#16a34a; font-weight:bold; }
   </style>
 </head>
 <body>
-  <h1>Control de 4 Servos</h1>
+  <h1>Control de Servos + TikTok</h1>
+  <div class="status" id="tiktok-status">⏳ Conectando a TikTok...</div>
+  
   <div class="buttons">
     <button onclick="triggerServo(0)">Servo 1</button>
     <button onclick="triggerServo(1)">Servo 2</button>
     <button onclick="triggerServo(2)">Servo 3</button>
     <button onclick="triggerServo(3)">Servo 4</button>
   </div>
-  <div id="status">Esperando...</div>
+
+  <h3>Últimos comentarios</h3>
+  <div id="comments"></div>
 
   <script>
+    const socket = io();
+
+    socket.on("tiktok-status", data => {
+      document.getElementById("tiktok-status").innerText = data.connected
+        ? "✅ Conectado a TikTok Live"
+        : "❌ Desconectado de TikTok";
+    });
+
+    socket.on("tiktok-comment", data => {
+      const div = document.createElement("div");
+      div.classList.add("comment");
+      div.innerHTML = `<strong>${data.user}:</strong> ${data.text}`;
+      const container = document.getElementById("comments");
+      container.prepend(div);
+      if (container.children.length > 10) container.removeChild(container.lastChild);
+    });
+
+    socket.on("servo-triggered", data => {
+      const div = document.createElement("div");
+      div.classList.add("comment", "servo-event");
+      div.innerHTML = `🎯 Servo ${data.id+1} activado por ${data.user}`;
+      const container = document.getElementById("comments");
+      container.prepend(div);
+    });
+
     async function triggerServo(id) {
       await fetch(`/api/servos/${id}/trigger`, { method: "POST" });
-      document.getElementById("status").innerText = `Servo ${id+1} activado`;
     }
   </script>
 </body>
