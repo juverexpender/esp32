@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Control LED ESP32</title>
+  <style>
+    body { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:Arial; }
+    button { padding:15px 30px; font-size:20px; margin:10px; border:none; border-radius:10px; cursor:pointer; }
+    #on { background:green; color:white; }
+    #off { background:red; color:white; }
+  </style>
+</head>
+<body>
+  <h1>Control LED ESP32</h1>
+  <button id="on">ENCENDER</button>
+  <button id="off">APAGAR</button>
+
+  <script>
+    async function sendState(state) {
+      await fetch("/api/state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state })
+      });
+    }
+    document.getElementById("on").onclick = () => sendState("on");
+    document.getElementById("off").onclick = () => sendState("off");
+  </script>
+</body>
+</html>
