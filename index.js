@@ -5,26 +5,28 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-let servoAngle = 90; // Ángulo inicial (centro)
+// Estados iniciales de los 4 servos
+let servos = [0, 0, 0, 0]; // grados (0 o 180)
 
 app.use(bodyParser.json());
 
-// --- API para el servo ---
-app.get("/api/servo", (req, res) => {
-  res.json({ angle: servoAngle });
+// --- API para leer estados ---
+app.get("/api/servos", (req, res) => {
+  res.json({ servos });
 });
 
-app.post("/api/servo", (req, res) => {
-  const { angle } = req.body;
-  if (typeof angle === "number" && angle >= 0 && angle <= 180) {
-    servoAngle = angle;
-    res.json({ message: "Ángulo actualizado", angle: servoAngle });
+// --- API para cambiar un servo ---
+app.post("/api/servos/:id/toggle", (req, res) => {
+  const id = Number(req.params.id);
+  if (id >= 0 && id < servos.length) {
+    servos[id] = servos[id] === 0 ? 180 : 0; // alterna entre 0 y 180
+    res.json({ message: `Servo ${id} actualizado`, servos });
   } else {
-    res.status(400).json({ error: "Ángulo inválido (0-180)" });
+    res.status(400).json({ error: "ID de servo inválido" });
   }
 });
 
-// --- Servir HTML ---
+// --- Servir el HTML ---
 app.use(express.static(path.join(process.cwd())));
 
 app.listen(PORT, () => {
