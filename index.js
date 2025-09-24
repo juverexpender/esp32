@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 let triggers = [false, false, false, false];
 
 // --- Configurar TikTok ---
-const tiktokUsername = "tu_usuario_tiktok"; // <-- cámbialo por tu username
+const tiktokUsername = "juverbriceoterron"; // <-- cámbialo por tu username
 const tiktokLiveConnection = new TikTokLiveConnection(tiktokUsername);
 
 tiktokLiveConnection.connect().then(state => {
