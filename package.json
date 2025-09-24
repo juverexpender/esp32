@@ -1,13 +1,14 @@
 {
-  "name": "esp32-led-render",
+  "name": "esp32-tiktok-servos",
   "version": "1.0.0",
+  "type": "module",               // NECESARIO para usar "import"
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "body-parser": "^1.20.2"
+    "body-parser": "^1.20.2",
+    "tiktok-live-connector": "^1.0.7"
   }
 }
