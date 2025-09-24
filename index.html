@@ -3,35 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Servo ESP32</title>
+  <title>Control 4 Servos</title>
   <style>
     body { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; font-family:Arial; background:#f3f4f6; }
     h1 { margin-bottom:20px; }
-    input[type=range] { width:80%; max-width:400px; }
-    #value { margin-top:10px; font-size:1.2rem; font-weight:bold; }
+    .buttons { display:grid; grid-template-columns:1fr 1fr; gap:15px; }
+    button {
+      padding:20px;
+      font-size:18px;
+      font-weight:bold;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      background:#2563eb;
+      color:white;
+      transition:transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    button:hover { transform:scale(1.05); box-shadow:0 4px 8px rgba(0,0,0,0.2); }
+    #status { margin-top:20px; }
   </style>
 </head>
 <body>
-  <h1>Control de Servo ESP32</h1>
-  <input type="range" min="0" max="180" value="90" id="slider">
-  <div id="value">Ángulo: 90°</div>
+  <h1>Control de 4 Servos</h1>
+  <div class="buttons">
+    <button onclick="toggleServo(0)">Servo 1</button>
+    <button onclick="toggleServo(1)">Servo 2</button>
+    <button onclick="toggleServo(2)">Servo 3</button>
+    <button onclick="toggleServo(3)">Servo 4</button>
+  </div>
+  <div id="status">Esperando datos...</div>
 
   <script>
-    const slider = document.getElementById("slider");
-    const value = document.getElementById("value");
-
-    async function sendAngle(angle) {
-      await fetch("/api/servo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ angle })
-      });
+    async function toggleServo(id) {
+      await fetch(`/api/servos/${id}/toggle`, { method: "POST" });
+      updateStatus();
     }
 
-    slider.oninput = () => {
-      value.innerText = `Ángulo: ${slider.value}°`;
-      sendAngle(Number(slider.value));
-    };
+    async function updateStatus() {
+      const res = await fetch("/api/servos");
+      const data = await res.json();
+      document.getElementById("status").innerText =
+        "Ángulos: " + data.servos.join("°, ") + "°";
+    }
+
+    setInterval(updateStatus, 500); // actualiza cada 0.5s
+    updateStatus();
   </script>
 </body>
 </html>
