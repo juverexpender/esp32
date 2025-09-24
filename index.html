@@ -20,34 +20,24 @@
       transition:transform 0.15s ease, box-shadow 0.15s ease;
     }
     button:hover { transform:scale(1.05); box-shadow:0 4px 8px rgba(0,0,0,0.2); }
-    #status { margin-top:20px; }
+    #status { margin-top:20px; font-size:14px; }
   </style>
 </head>
 <body>
   <h1>Control de 4 Servos</h1>
   <div class="buttons">
-    <button onclick="toggleServo(0)">Servo 1</button>
-    <button onclick="toggleServo(1)">Servo 2</button>
-    <button onclick="toggleServo(2)">Servo 3</button>
-    <button onclick="toggleServo(3)">Servo 4</button>
+    <button onclick="triggerServo(0)">Servo 1</button>
+    <button onclick="triggerServo(1)">Servo 2</button>
+    <button onclick="triggerServo(2)">Servo 3</button>
+    <button onclick="triggerServo(3)">Servo 4</button>
   </div>
-  <div id="status">Esperando datos...</div>
+  <div id="status">Esperando...</div>
 
   <script>
-    async function toggleServo(id) {
-      await fetch(`/api/servos/${id}/toggle`, { method: "POST" });
-      updateStatus();
+    async function triggerServo(id) {
+      await fetch(`/api/servos/${id}/trigger`, { method: "POST" });
+      document.getElementById("status").innerText = `Servo ${id+1} activado`;
     }
-
-    async function updateStatus() {
-      const res = await fetch("/api/servos");
-      const data = await res.json();
-      document.getElementById("status").innerText =
-        "Ángulos: " + data.servos.join("°, ") + "°";
-    }
-
-    setInterval(updateStatus, 500); // actualiza cada 0.5s
-    updateStatus();
   </script>
 </body>
 </html>
