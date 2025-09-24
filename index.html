@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control LED ESP32</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #f3f4f6;
+      font-family: Arial, sans-serif;
+      margin: 0;
+    }
+    h1 {
+      font-size: 2rem;
+      color: #111827;
+      margin-bottom: 20px;
+    }
+    .buttons {
+      display: flex;
+      gap: 15px;
+    }
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    #on {
+      background: #16a34a;
+      color: white;
+    }
+    #off {
+      background: #dc2626;
+      color: white;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 1rem;
+      color: #374151;
+    }
+  </style>
+</head>
+<body>
+  <h1>Control de LED en ESP32</h1>
+  <div class="buttons">
+    <button id="on">ENCENDER</button>
+    <button id="off">APAGAR</button>
+  </div>
+  <div id="status">Estado: Desconocido</div>
+
+  <script>
+    async function sendState(state) {
+      try {
+        const res = await fetch("/api/state", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state })
+        });
+        const data = await res.json();
+        document.getElementById("status").innerText = "Estado: " + data.state.toUpperCase();
+      } catch (e) {
+        document.getElementById("status").innerText = "Error de conexión";
+      }
+    }
+
+    async function checkState() {
+      try {
+        const res = await fetch("/api/state");
+        const data = await res.json();
+        document.getElementById("status").innerText = "Estado: " + data.state.toUpperCase();
+      } catch {
+        document.getElementById("status").innerText = "Error al obtener estado";
+      }
+    }
+
+    document.getElementById("on").onclick = () => sendState("on");
+    document.getElementById("off").onclick = () => sendState("off");
+
+    // Consulta estado al cargar
+    checkState();
+  </script>
+</body>
+</html>
