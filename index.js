@@ -5,28 +5,29 @@ import path from "path";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Estados iniciales de los 4 servos
-let servos = [0, 0, 0, 0]; // grados (0 o 180)
+// Guardamos triggers (false por defecto)
+let triggers = [false, false, false, false];
 
 app.use(bodyParser.json());
 
-// --- API para leer estados ---
+// --- API para leer triggers ---
 app.get("/api/servos", (req, res) => {
-  res.json({ servos });
+  res.json({ triggers });
+  // 🔄 Después de enviar, reseteamos triggers para que no se repitan
+  triggers = [false, false, false, false];
 });
 
-// --- API para cambiar un servo ---
-app.post("/api/servos/:id/toggle", (req, res) => {
+// --- API para activar un trigger ---
+app.post("/api/servos/:id/trigger", (req, res) => {
   const id = Number(req.params.id);
-  if (id >= 0 && id < servos.length) {
-    servos[id] = servos[id] === 0 ? 180 : 0; // alterna entre 0 y 180
-    res.json({ message: `Servo ${id} actualizado`, servos });
+  if (id >= 0 && id < triggers.length) {
+    triggers[id] = true;
+    res.json({ message: `Trigger activado para servo ${id}` });
   } else {
     res.status(400).json({ error: "ID de servo inválido" });
   }
 });
 
-// --- Servir el HTML ---
 app.use(express.static(path.join(process.cwd())));
 
 app.listen(PORT, () => {
