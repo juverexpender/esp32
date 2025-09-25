@@ -1,81 +1,71 @@
+// index.js
 import express from "express";
 import bodyParser from "body-parser";
-import path from "path";
-import { fileURLToPath } from "url";
+import { WebcastPushConnection } from "tiktok-live-connector";
 import { createServer } from "http";
-import { Server } from "socket.io";
-import TikTokLiveConnection from "tiktok-live-connector";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { Server as SocketIOServer } from "socket.io";
 
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
+const io = new SocketIOServer(server);
 
-const PORT = process.env.PORT || 3000;
+app.use(bodyParser.json());
+app.use(express.static("public")); // donde pondrás index.html
 
-// Estado global
-let triggers = [false, false, false, false];
-let tiktokConnected = false;
-let lastComments = [];
+// === Estado de servos ===
+let servoStates = [0, 0, 0, 0]; // 0 = reposo, 1 = activado
 
-// --- Configurar TikTok Live ---
+// === Rutas API ===
+app.get("/api/state", (req, res) => {
+  res.json({ servos: servoStates });
+});
+
+app.post("/api/servo/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  if (id >= 1 && id <= 4) {
+    servoStates[id - 1] = 1; // activar servo
+    io.emit("servo", { id }); // notificar a clientes
+    console.log(`🔧 Servo ${id} activado desde botón`);
+    setTimeout(() => (servoStates[id - 1] = 0), 1500); // vuelve a reposo
+    res.json({ ok: true });
+  } else {
+    res.status(400).json({ error: "Servo inválido" });
+  }
+});
+
+// === TikTok Live Connection ===
 const tiktokUsername = "juverbriceoterron";
-const tiktokLiveConnection = new TikTokLiveConnection(tiktokUsername);
+const tiktokLive = new WebcastPushConnection(tiktokUsername);
 
-// Conectar
-tiktokLiveConnection.connect().then(() => {
-  console.log(`✅ Conectado a TikTok Live como ${tiktokUsername}`);
-  tiktokConnected = true;
-  io.emit("tiktok-status", { connected: true });
+tiktokLive.connect().then(state => {
+  console.log(`✅ Conectado a la sala de TikTok: ${state.roomId}`);
 }).catch(err => {
-  console.error("❌ Error al conectar a TikTok:", err);
-  tiktokConnected = false;
-  io.emit("tiktok-status", { connected: false });
+  console.error("❌ Error conectando a TikTok:", err);
 });
 
 // Escuchar comentarios
-tiktokLiveConnection.on("chat", data => {
-  const msg = data.comment?.trim();
-  if (!msg) return;
+tiktokLive.on("chat", (data) => {
+  console.log(`💬 ${data.uniqueId}: ${data.comment}`);
+  io.emit("chat", { user: data.uniqueId, comment: data.comment });
 
-  // Guardar en historial (máx 10)
-  lastComments.unshift({ user: data.uniqueId, text: msg });
-  if (lastComments.length > 10) lastComments.pop();
-
-  io.emit("tiktok-comment", { user: data.uniqueId, text: msg });
-
-  // Si es 1,2,3,4 -> activar servo
-  if (["1", "2", "3", "4"].includes(msg)) {
-    const index = parseInt(msg) - 1;
-    triggers[index] = true;
-    console.log(`🎯 Activando servo ${index + 1} (comentario de ${data.uniqueId})`);
-    io.emit("servo-triggered", { id: index, user: data.uniqueId });
+  // Si el comentario es "1","2","3","4" activamos el servo correspondiente
+  const num = parseInt(data.comment.trim());
+  if (num >= 1 && num <= 4) {
+    servoStates[num - 1] = 1;
+    io.emit("servo", { id: num });
+    console.log(`🎯 Servo ${num} activado desde TikTok`);
+    setTimeout(() => (servoStates[num - 1] = 0), 1500);
   }
 });
 
-// API para ESP32
-app.use(bodyParser.json());
-
-app.get("/api/servos", (req, res) => {
-  res.json({ triggers });
-  triggers = [false, false, false, false];
+// === WebSocket para interfaz ===
+io.on("connection", (socket) => {
+  console.log("🔌 Cliente conectado a Socket.IO");
+  socket.emit("init", { servos: servoStates });
 });
 
-app.post("/api/servos/:id/trigger", (req, res) => {
-  const id = Number(req.params.id);
-  if (id >= 0 && id < triggers.length) {
-    triggers[id] = true;
-    io.emit("servo-triggered", { id, user: "Botón Web" });
-    res.json({ message: `Trigger activado para servo ${id}` });
-  } else {
-    res.status(400).json({ error: "ID de servo inválido" });
-  }
-});
-
-// Servir interfaz
-app.use(express.static(path.join(__dirname)));
-
+// === Iniciar servidor ===
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
 });
