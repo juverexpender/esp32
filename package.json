@@ -1,15 +1,19 @@
 {
   "name": "esp32-tiktok-servos",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Control de 4 servos vía botones y comentarios de TikTok Live",
+  "type": "module",                // NECESARIO para usar import/export en Node
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js"       // Render usará este comando para arrancar
   },
   "dependencies": {
     "express": "^4.18.2",
     "body-parser": "^1.20.2",
     "tiktok-live-connector": "^1.0.7",
     "socket.io": "^4.7.2"
+  },
+  "engines": {
+    "node": ">=18"                 // Forzar Node 18+ para compatibilidad ESM
   }
 }
